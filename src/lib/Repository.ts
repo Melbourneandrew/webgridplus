@@ -130,14 +130,12 @@ export async function getGameRank(
 export async function getLeaderboard(
   gameType?: "regular" | "blitz"
 ) {
+  const gameTypeId = gameType === "regular" ? 1 : 2;
   let query = supabase
     .from("leaderboard")
     .select("*")
-    .order("bps", { ascending: false });
-
-  if (gameType) {
-    query = query.eq("type_name", gameType);
-  }
+    .order("bps", { ascending: false })
+    .eq("game_type_id", gameTypeId);
 
   return query;
 }

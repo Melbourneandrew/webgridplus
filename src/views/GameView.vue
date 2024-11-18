@@ -11,6 +11,7 @@ import {
   getUserProfile,
 } from "../lib/Repository";
 import Dialog from "primevue/dialog";
+import Button from "primevue/button";
 
 interface GameMode {
   time: number;

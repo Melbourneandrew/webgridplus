@@ -6,7 +6,6 @@ import Button from "primevue/button";
 import router from "./router";
 const app = createApp(App);
 
-app.component("Button", Button);
 app.use(PrimeVue, {
   theme: "none",
 });

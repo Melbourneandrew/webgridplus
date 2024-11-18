@@ -5,6 +5,7 @@ import ProfilePicture from "@/components/ProfilePicture.vue";
 import { useRouter } from "vue-router";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
+import Button from "primevue/button";
 
 const router = useRouter();
 
@@ -12,12 +13,16 @@ const leaderboard = ref([]);
 const gameType = ref("regular");
 
 async function fetchLeaderboard() {
+  console.log(
+    "Fetching leaderboard for game type:",
+    gameType.value
+  );
   const { data, error } = await getLeaderboard(gameType.value);
   if (error) {
     console.error("Error fetching leaderboard:", error);
     return;
   }
-  console.log(data);
+  console.log("Leaderboard data:", data);
   leaderboard.value = data || [];
 }
 

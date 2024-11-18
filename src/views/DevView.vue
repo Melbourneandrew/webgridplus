@@ -139,6 +139,9 @@ import {
   getLeaderboard,
   addPlayedGame,
 } from "@/lib/Repository";
+import InputText from "primevue/inputtext";
+import Select from "primevue/select";
+import Button from "primevue/button";
 
 const signUp = ref({
   displayName: "",

@@ -2,6 +2,8 @@
 import { useRouter } from "vue-router";
 import { isUserSignedIn } from "../lib/Repository";
 import { onMounted, ref } from "vue";
+import Button from "primevue/button";
+
 const router = useRouter();
 const userLoggedIn = ref(false);
 

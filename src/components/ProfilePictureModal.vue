@@ -3,6 +3,8 @@ import { ref } from "vue";
 import ProfilePicture from "@/components/ProfilePicture.vue";
 import { updateUserProfilePicture } from "@/lib/Repository";
 import LoadingIndicator from "@/components/LoadingIndicator.vue";
+import Button from "primevue/button";
+
 const emit = defineEmits(["close"]);
 
 const profilePicture = ref("");
