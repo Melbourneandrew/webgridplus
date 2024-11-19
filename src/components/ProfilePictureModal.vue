@@ -33,6 +33,7 @@ const handleUpload = async () => {
   }
   isLoading.value = false;
   emit("close");
+  window.location.reload();
 };
 </script>
 

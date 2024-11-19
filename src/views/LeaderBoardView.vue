@@ -103,7 +103,11 @@ watchEffect(() => {
             />
           </template>
         </Column>
-        <Column field="display_name" header="Name">
+        <Column
+          field="display_name"
+          class="w-[370px]"
+          header="Name"
+        >
           <template #body="slotProps">
             {{
               slotProps.data.display_name.length > 27
