@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from "vue";
-import GameGrid from "../components/GameGrid.vue";
+import GameGrid from "@/components/GameGrid.vue";
 import GameOverModal from "@/components/GameOverModal.vue";
 import WelcomeModal from "@/components/WelcomeModal.vue";
 import {

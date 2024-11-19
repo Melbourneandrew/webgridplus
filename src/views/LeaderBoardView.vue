@@ -9,7 +9,7 @@ import Button from "primevue/button";
 import LoadingIndicator from "@/components/LoadingIndicator.vue";
 const router = useRouter();
 
-const leaderboard = ref([]);
+const leaderboard = ref<any[]>([]);
 const gameType = ref("regular");
 const isLoading = ref(false);
 
@@ -19,7 +19,9 @@ async function fetchLeaderboard() {
     "Fetching leaderboard for game type:",
     gameType.value
   );
-  const { data, error } = await getLeaderboard(gameType.value);
+  const { data, error } = await getLeaderboard(
+    gameType.value as "regular" | "blitz"
+  );
   if (error) {
     console.error("Error fetching leaderboard:", error);
     return;
