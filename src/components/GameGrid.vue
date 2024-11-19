@@ -1,13 +1,15 @@
 <template>
-  <div class="grid grid-cols-30 gap-0">
-    <div v-for="row in 30" :key="row">
+  <div
+    class="grid grid-cols-30 gap-0 w-full max-w-[1100px] min-w-[660px] aspect-square"
+  >
+    <div v-for="row in 30">
       <div
         v-for="col in 30"
         :key="`${row}-${col}`"
         :class="[
-          'w-[25px] h-[25px] border border-black',
+          'aspect-square w-full border border-black',
           !clickedCell && !isActive(row, col)
-            ? 'hover:bg-gray-100'
+            ? 'hover:bg-gray-300'
             : '',
           'cursor-pointer',
           isActive(row, col) ? 'bg-[#1d82f9]' : '',

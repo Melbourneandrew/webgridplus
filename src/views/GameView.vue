@@ -138,51 +138,7 @@ const formatTime = (seconds: number): string => {
     .padStart(2, "0")}`;
 };
 
-const gameOver = async () => {
-  const playedGame = await addPlayedGame({
-    bps: bps.value,
-    gameType: gameMode.value,
-  });
-
-  if (!playedGame) {
-    console.error("Failed to save game");
-    gameOverModalVisible.value = true;
-    return;
-  }
-
-  console.log("Played game: ", playedGame);
-
-  // Get user profile stats if logged in
-  const isLoggedIn = await isUserSignedIn();
-  if (isLoggedIn) {
-    const {
-      data: { user },
-    } = await getSignedInUser();
-    if (user) {
-      const profileStats = await getUserProfile(user.id);
-      console.log("Profile stats: ", profileStats);
-      playerAverage.value =
-        gameMode.value === "regular"
-          ? profileStats.data.regular.average_score
-          : profileStats.data.blitz.average_score;
-    }
-  }
-
-  const currentGameRanking = await getGameRank(
-    playedGame.data.id,
-    playedGame.data.game_type_id
-  );
-
-  if (!currentGameRanking) {
-    console.error("Failed to get game rank");
-    gameOverModalVisible.value = true;
-    return;
-  }
-
-  gameRank.value = currentGameRanking.data[0].rank;
-
-  console.log("Game rank: ", gameRank);
-  console.log("Player average: ", playerAverage);
+const gameOver = () => {
   gameOverModalVisible.value = true;
 };
 
@@ -212,14 +168,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex justify-evenly">
     <!-- Game Controls and Time Display -->
     <div
-      class="flex items-center flex-1 flex-col p-[30px] pt-[0px]"
+      class="flex items-center justify-center flex-col w-[450px] p-[30px] pb-[160px] pt-[0px]"
     >
       <!-- Title Text -->
       <div class="flex flex-col items-center mb-[20px] gap-2">
-        <h1 class="text-[50px] font-bold">Play Webgrid+</h1>
+        <h1 class="text-[50px] font-bold">
+          &nbsp; Play Webgrid+
+        </h1>
         <!-- <button
           class="flex items-center text-black border border-black font-light font-[15px] rounded-full px-3 py-1 h-[20px] hover:bg-gray-100"
           @click="showDescription = !showDescription"
@@ -299,7 +257,7 @@ onUnmounted(() => {
       </div>
     </div>
     <!-- Game Grid -->
-    <div class="flex flex-1 flex-col items-center">
+    <div class="flex flex-col items-center justify-center">
       <GameGrid
         :active-cell="activeCell"
         @cell-clicked="(row, col) => handleCellClick(row, col)"
@@ -320,8 +278,7 @@ onUnmounted(() => {
     <GameOverModal
       :bps="bps"
       :ntpm="ntpm"
-      :average="playerAverage"
-      :rank="gameRank"
+      :game-type="gameMode"
       @close="resetGame"
     />
   </Dialog>

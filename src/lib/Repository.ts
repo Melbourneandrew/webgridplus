@@ -14,6 +14,7 @@ export async function signUpNewUser(
   email: string,
   password: string
 ) {
+  // First sign up the user
   const { data, error } = await supabase.auth.signUp({
     email: email,
     password: password,
@@ -23,7 +24,19 @@ export async function signUpNewUser(
       },
     },
   });
-  return { data, error };
+
+  if (error) {
+    return { data, error };
+  }
+
+  // Then sign them in automatically
+  const { data: signInData, error: signInError } =
+    await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+  return { data: signInData, error: signInError };
 }
 
 export async function signInUser(
@@ -49,8 +62,8 @@ export async function getUserProfile(userId: string) {
       .from("profile_stats")
       .select("*")
       .eq("profile_id", userId)
-      .eq("game_type_id", 1)
-      .single();
+      .or("game_type_id.eq.1,game_type_id.is.null")
+      .maybeSingle();
 
   // Fetch blitz game stats (game_type_id = 2)
   const { data: blitzStats, error: blitzError } = await supabase
@@ -58,7 +71,7 @@ export async function getUserProfile(userId: string) {
     .select("*")
     .eq("profile_id", userId)
     .eq("game_type_id", 2)
-    .single();
+    .maybeSingle();
 
   if (regularError || blitzError) {
     throw new Error("Error fetching user profile");
@@ -131,11 +144,12 @@ export async function getLeaderboard(
   gameType?: "regular" | "blitz"
 ) {
   const gameTypeId = gameType === "regular" ? 1 : 2;
-  let query = supabase
-    .from("leaderboard")
-    .select("*")
-    .order("bps", { ascending: false })
-    .eq("game_type_id", gameTypeId);
+  let query;
+  if (gameType == "regular") {
+    query = supabase.from("regular_leaderboard").select("*");
+  } else {
+    query = supabase.from("blitz_leaderboard").select("*");
+  }
 
   return query;
 }
@@ -154,7 +168,10 @@ export async function addPlayedGame({
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    console.error("Error getting user:", userError);
+    console.error(
+      "No user found to add game to leaderboard :",
+      userError
+    );
     return;
   }
   console.log(gameType);

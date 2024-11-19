@@ -28,8 +28,12 @@ const handleProfilePictureModalClose = () => {
 
 const copySharableLink = () => {
   let link = window.location.href;
-  if (link.split("/")[link.split("/").length - 1].length < 7) {
-    link += `/${userId}`;
+  console.log(link.split("/"));
+  if (link.split("/")[link.split("/").length - 1].length <= 7) {
+    if (link.length > 0 && link[link.length - 1] !== "/") {
+      link += "/";
+    }
+    link += `${userId}`;
   }
   navigator.clipboard.writeText(link);
 };
@@ -55,12 +59,13 @@ onMounted(async () => {
     }
 
     const { data } = await getUserProfile(userId);
-    console.log("User profile data:", data);
     profile.value = {
       ...data.regular, // This is for the display name and profile picture
+      ...data.blitz, // This is for the display name and profile picture if the regular profile is not present
       regular: data.regular,
       blitz: data.blitz,
     };
+    console.log("User profile data:", profile.value);
     isLoading.value = false;
   } catch (error) {
     console.error("Failed to load profile:", error);
@@ -88,7 +93,7 @@ onMounted(async () => {
             <ProfilePicture :src="profile.profile_picture" />
             <div
               @click="openProfilePictureModal"
-              class="underline"
+              class="underline hover:cursor-pointer"
               v-if="isSignedInUser"
             >
               Edit
@@ -120,7 +125,7 @@ onMounted(async () => {
         </div>
         <!-- Regular Stats -->
         <div class="text-[24px] font-bold">Regular</div>
-        <div class="flex gap-2">
+        <div class="flex justify-center gap-2">
           <div
             class="border border-black rounded px-[15px] min-w-[100px] h-[100px] flex flex-col items-center justify-center"
           >
@@ -189,7 +194,7 @@ onMounted(async () => {
         <br />
         <!-- Blitz Stats -->
         <div class="text-[24px] font-bold">Blitz</div>
-        <div class="flex gap-2">
+        <div class="flex justify-center gap-2">
           <div
             class="border border-black rounded px-[15px] min-w-[100px] h-[100px] flex flex-col items-center justify-center"
           >

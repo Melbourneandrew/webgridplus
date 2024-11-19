@@ -6,13 +6,15 @@ import { useRouter } from "vue-router";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Button from "primevue/button";
-
+import LoadingIndicator from "@/components/LoadingIndicator.vue";
 const router = useRouter();
 
 const leaderboard = ref([]);
 const gameType = ref("regular");
+const isLoading = ref(false);
 
 async function fetchLeaderboard() {
+  isLoading.value = true;
   console.log(
     "Fetching leaderboard for game type:",
     gameType.value
@@ -24,6 +26,7 @@ async function fetchLeaderboard() {
   }
   console.log("Leaderboard data:", data);
   leaderboard.value = data || [];
+  isLoading.value = false;
 }
 
 async function handleRowClick(event: any) {
@@ -129,6 +132,9 @@ watchEffect(() => {
           </template>
         </Column>
       </DataTable>
+      <div class="flex justify-center">
+        <LoadingIndicator v-if="isLoading" />
+      </div>
     </div>
   </div>
 </template>

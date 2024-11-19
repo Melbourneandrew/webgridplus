@@ -17,7 +17,12 @@ onMounted(async () => {
     class="flex w-screen items-center justify-end gap-1 p-[20px] pt-[15px]"
   >
     <!-- Title -->
-    <div class="text-[36px] font-bold mr-auto">Webgrid+</div>
+    <div
+      class="text-[36px] font-bold mr-auto cursor-pointer"
+      @click="router.push('/')"
+    >
+      Webgrid+
+    </div>
     <!-- Play Button -->
     <div>
       <Button
