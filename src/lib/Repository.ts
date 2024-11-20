@@ -62,8 +62,10 @@ export async function getUserProfile(userId: string) {
       .from("profile_stats")
       .select("*")
       .eq("profile_id", userId)
-      .or("game_type_id.eq.1,game_type_id.is.null")
+      // .or("game_type_id.eq.1,game_type_id.is.null")
+      .eq("game_type_id", 1)
       .maybeSingle();
+  console.log(regularStats);
 
   // Fetch blitz game stats (game_type_id = 2)
   const { data: blitzStats, error: blitzError } = await supabase
@@ -72,10 +74,17 @@ export async function getUserProfile(userId: string) {
     .eq("profile_id", userId)
     .eq("game_type_id", 2)
     .maybeSingle();
+  console.log(blitzStats);
 
   if (regularError || blitzError) {
-    throw new Error("Error fetching user profile");
+    throw new Error(
+      `Error fetching user profile: ${
+        regularError || blitzError
+      }`
+    );
   }
+
+  console.log(regularError, blitzError);
 
   // Combine the stats into one object
   return {
