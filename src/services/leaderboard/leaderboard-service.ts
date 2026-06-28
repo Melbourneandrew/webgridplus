@@ -1,4 +1,4 @@
-import { gameModeByName, type GameModeName } from "@/domain/game/mode";
+import { gameModeByName, type GameModeName } from "@/domain/game/modes";
 import { getLeaderboardRows } from "@/infrastructure/db/repositories/game-repository";
 
 export type LeaderboardRow = {

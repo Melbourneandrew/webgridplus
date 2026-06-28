@@ -19,4 +19,9 @@
   - Add tests for leaderboard/profile query edge states.
 - Tune ranking and tie-break behavior against legacy data semantics.
 - Add `/auth/logout` redirect route currently present, and `GET`/`POST` behavior should be standardized.
-
+- Core game parity work:
+  - Scoring constants were adjusted to `log2(gridSize² − 1)` to match publicly observed Neuralink bundle behavior.
+  - NTPM currently normalized by configured mode duration for legacy Regular/Blitz modes.
+  - Remaining uncertainty: exact timer policy differs from observed Neuralink implementation (their timer is 70 seconds while scoring uses rolling 60-second window); Webgrid+ keeps existing 60/15 mode semantics for parity with this repo’s requirements.
+- Research traceability:
+  - Added `project/research-notes/neuralink-webgrid-bundle-analysis-2026-06-27.md`

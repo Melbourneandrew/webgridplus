@@ -2,8 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { calculateBps, calculateNtpm } from "@/domain/scoring";
-import { gameModeByName, gridDimension, type GameModeName } from "@/domain/game/mode";
-import { createGridGameState } from "@/domain/game/session";
+import { gameModeByName, type GameModeName } from "@/domain/game/modes";
+import {
+  createGridGameState,
+  registerCellClick,
+  resetSession,
+  tickSession,
+} from "@/domain/game/session";
+import { pickDifferentCell } from "@/domain/game/grid";
 
 type SubmissionResponse = {
   rank?: number | null;
@@ -11,9 +17,7 @@ type SubmissionResponse = {
 };
 
 export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
-  const [mode, setMode] = useState<GameModeName>(defaultMode);
   const [state, setState] = useState(() => createGridGameState(defaultMode));
-  const [activeCell, setActiveCell] = useState({ row: state.activeCell.row, col: state.activeCell.col });
   const [results, setResults] = useState<SubmissionResponse | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -25,8 +29,8 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
   }, []);
 
   const ntpm = useMemo(() => {
-    return calculateNtpm(state.correctClicks, state.incorrectClicks, gameModeByName[mode].timeSeconds);
-  }, [state.correctClicks, state.incorrectClicks, mode]);
+    return calculateNtpm(state.correctClicks, state.incorrectClicks, gameModeByName[state.mode].timeSeconds);
+  }, [state.correctClicks, state.incorrectClicks, state.mode]);
 
   const bps = useMemo(() => calculateBps(ntpm), [ntpm]);
 
@@ -39,18 +43,15 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
 
   const resetGame = (nextMode?: GameModeName) => {
     clearTimer();
-    const resolvedMode = nextMode ?? mode;
-    const next = createGridGameState(resolvedMode);
+    const next = resetSession(state, nextMode);
     setState(next);
-    setMode(resolvedMode);
-    setActiveCell(next.activeCell);
     setResults(null);
   };
 
   const stopAndFinish = async () => {
     const response = await fetch("/api/games", {
       method: "POST",
-      body: JSON.stringify({ gameType: mode, ntpm, bps }),
+      body: JSON.stringify({ gameType: state.mode, ntpm, bps }),
       headers: { "content-type": "application/json" },
     });
 
@@ -69,41 +70,37 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     clearTimer();
     timerRef.current = setInterval(() => {
       setState((current) => {
-        const nextSeconds = current.secondsLeft - 1;
-        if (nextSeconds <= 0) {
+        const updated = tickSession(current);
+        if (updated.isGameOver) {
           clearTimer();
           void stopAndFinish();
-          return { ...current, secondsLeft: 0, isGameOver: true, isGameStarted: false };
         }
-        return { ...current, secondsLeft: nextSeconds };
+        return updated;
       });
     }, 1000);
   };
 
   const handleCellClick = (row: number, col: number) => {
-    if (state.isGameOver) return;
-    if (!state.isGameStarted) {
-      setState((current) => ({
-        ...current,
-        isGameStarted: true,
-      }));
-      startTimer();
+    if (state.isGameOver) {
+      return;
     }
 
-    if (row === activeCell.row && col === activeCell.col) {
-      setState((current) => ({
-        ...current,
-        correctClicks: current.correctClicks + 1,
-      }));
-      setActiveCell({
-        row: Math.floor(Math.random() * gridDimension) + 1,
-        col: Math.floor(Math.random() * gridDimension) + 1,
-      });
+    const shouldStart = !state.isGameStarted;
+    const next = registerCellClick(
+      state,
+      row,
+      col,
+      (size) => pickDifferentCell(size, state.activeCell),
+    );
+
+    if (shouldStart && !next.isGameStarted) {
+      return;
+    }
+    if (shouldStart) {
+      setState(next);
+      startTimer();
     } else {
-      setState((current) => ({
-        ...current,
-        incorrectClicks: current.incorrectClicks + 1,
-      }));
+      setState(next);
     }
   };
 
@@ -126,21 +123,23 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
       ) : null}
 
       <div className="flex gap-2">
-        <button onClick={() => resetGame("regular")} className={`rounded border px-3 py-1 ${mode === "regular" ? "bg-black text-white" : ""}`}>Regular</button>
-        <button onClick={() => resetGame("blitz")} className={`rounded border px-3 py-1 ${mode === "blitz" ? "bg-black text-white" : ""}`}>Blitz</button>
+        <button onClick={() => resetGame("regular")} className={`rounded border px-3 py-1 ${state.mode === "regular" ? "bg-black text-white" : ""}`}>Regular</button>
+        <button onClick={() => resetGame("blitz")} className={`rounded border px-3 py-1 ${state.mode === "blitz" ? "bg-black text-white" : ""}`}>Blitz</button>
       </div>
 
       <div className="flex flex-col items-center gap-2">
-        <div className="text-5xl font-bold">{String(state.secondsLeft).padStart(2, "0")}:00</div>
+      <div className="text-5xl font-bold">{String(state.secondsLeft).padStart(2, "0")}:00</div>
         <div className="text-4xl font-semibold">{bps.toFixed(2)} BPS</div>
-        <div className="text-lg text-gray-500">{Math.round(ntpm)} NTMP · 30x30</div>
+        <div className="text-lg text-gray-500">
+          {Math.round(ntpm)} NTMP · {gameModeByName[state.mode].gridSize}x{gameModeByName[state.mode].gridSize}
+        </div>
       </div>
 
       <div className="grid-30 gap-0 rounded border">
-        {Array.from({ length: 900 }).map((_, index) => {
-          const row = (index % 30) + 1;
-          const col = Math.floor(index / 30) + 1;
-          const isActive = row === activeCell.row && col === activeCell.col;
+        {Array.from({ length: gameModeByName[state.mode].gridSize ** 2 }).map((_, index) => {
+          const row = (index % gameModeByName[state.mode].gridSize) + 1;
+          const col = Math.floor(index / gameModeByName[state.mode].gridSize) + 1;
+          const isActive = row === state.activeCell.row && col === state.activeCell.col;
           return (
             <button
               key={`${row}-${col}`}

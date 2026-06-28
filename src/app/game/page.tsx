@@ -1,4 +1,4 @@
-import { gameModes, type GameModeName } from "@/domain/game/mode";
+import { gameModes, type GameModeName } from "@/domain/game/modes";
 import { GameShell } from "@/features/game/components/game-shell";
 
 interface GamePageProps {
@@ -9,6 +9,5 @@ interface GamePageProps {
 
 export default function GamePage({ searchParams }: GamePageProps) {
   const mode = searchParams?.mode === "blitz" ? "blitz" : "regular";
-  const defaultMode = mode as GameModeName;
-  return <GameShell defaultMode={defaultMode} availableModes={gameModes as unknown as GameModeName[]} />;
+  return <GameShell defaultMode={mode} availableModes={gameModes} />;
 }

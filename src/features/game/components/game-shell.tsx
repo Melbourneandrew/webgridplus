@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { type GameModeName } from "@/domain/game/mode";
+import { type GameModeName } from "@/domain/game/modes";
 import { GameClient } from "./game-client";
 
 interface GameShellProps {
   defaultMode: GameModeName;
-  availableModes: GameModeName[];
+  availableModes: readonly GameModeName[];
 }
 
 export function GameShell({ defaultMode, availableModes }: GameShellProps) {

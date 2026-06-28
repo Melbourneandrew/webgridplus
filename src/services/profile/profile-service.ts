@@ -1,4 +1,4 @@
-import { gameModeByName } from "@/domain/game/mode";
+import { gameModeByName } from "@/domain/game/modes";
 import { getProfile } from "@/infrastructure/db/repositories/user-repository";
 import {
   getProfileStatsFromMaterialized,

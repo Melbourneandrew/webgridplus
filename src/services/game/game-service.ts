@@ -8,7 +8,7 @@ import {
   getRankForPlayedGame,
   getProfileStatsFromMaterialized,
 } from "@/infrastructure/db/repositories/game-repository";
-import { gameModeByName, type GameModeName } from "@/domain/game/mode";
+import { gameModeByName, type GameModeName } from "@/domain/game/modes";
 
 type SubmitPlayedGameInput = {
   gameType: GameModeName;

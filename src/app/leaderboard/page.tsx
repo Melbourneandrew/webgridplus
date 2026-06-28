@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLeaderboardPage } from "@/services/leaderboard/leaderboard-service";
-import { gameModes, type GameModeName } from "@/domain/game/mode";
+import { gameModes, type GameModeName } from "@/domain/game/modes";
 
 interface SearchParams {
   searchParams?: {

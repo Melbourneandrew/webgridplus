@@ -1,4 +1,4 @@
-import { gameModes, type GameModeName } from "@/domain/game/mode";
+import { gameModes, type GameModeName } from "@/domain/game/modes";
 import { GameShell } from "@/features/game/components/game-shell";
 
 export default async function HomePage() {
