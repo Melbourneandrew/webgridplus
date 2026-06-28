@@ -5,6 +5,7 @@ import { calculateBps, calculateNtpm } from "@/domain/scoring";
 import { gameModeByName, type GameModeName } from "@/domain/game/modes";
 import {
   createGridGameState,
+  type GameState,
   registerCellClick,
   resetSession,
   tickSession,
@@ -21,6 +22,7 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
   const [results, setResults] = useState<SubmissionResponse | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const modeConfig = gameModeByName[state.mode];
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.localStorage.getItem("hasVisitedWebgrid")) {
@@ -29,10 +31,10 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
   }, []);
 
   const ntpm = useMemo(() => {
-    return calculateNtpm(state.correctClicks, state.incorrectClicks, gameModeByName[state.mode].timeSeconds);
-  }, [state.correctClicks, state.incorrectClicks, state.mode]);
+    return calculateNtpm(state.correctClicks, state.incorrectClicks, modeConfig.timeSeconds);
+  }, [state.correctClicks, state.incorrectClicks, modeConfig.timeSeconds]);
 
-  const bps = useMemo(() => calculateBps(ntpm), [ntpm]);
+  const bps = useMemo(() => calculateBps(ntpm, modeConfig.gridSize), [modeConfig.gridSize, ntpm]);
 
   const clearTimer = () => {
     if (timerRef.current) {
@@ -48,10 +50,25 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     setResults(null);
   };
 
-  const stopAndFinish = async () => {
+  const scoreForState = (gameState: GameState) => {
+    const config = gameModeByName[gameState.mode];
+    const finalNtpm = calculateNtpm(gameState.correctClicks, gameState.incorrectClicks, config.timeSeconds);
+    return {
+      mode: gameState.mode,
+      ntpm: finalNtpm,
+      bps: calculateBps(finalNtpm, config.gridSize),
+    };
+  };
+
+  const stopAndFinish = async (gameState: GameState) => {
+    const finalScore = scoreForState(gameState);
     const response = await fetch("/api/games", {
       method: "POST",
-      body: JSON.stringify({ gameType: state.mode, ntpm, bps }),
+      body: JSON.stringify({
+        gameType: finalScore.mode,
+        ntpm: finalScore.ntpm,
+        bps: finalScore.bps,
+      }),
       headers: { "content-type": "application/json" },
     });
 
@@ -73,7 +90,7 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
         const updated = tickSession(current);
         if (updated.isGameOver) {
           clearTimer();
-          void stopAndFinish();
+          void stopAndFinish(updated);
         }
         return updated;
       });
@@ -90,7 +107,7 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
       state,
       row,
       col,
-      (size) => pickDifferentCell(size, state.activeCell),
+      (size, previous) => pickDifferentCell(size, previous),
     );
 
     if (shouldStart && !next.isGameStarted) {
@@ -131,14 +148,14 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
       <div className="text-5xl font-bold">{String(state.secondsLeft).padStart(2, "0")}:00</div>
         <div className="text-4xl font-semibold">{bps.toFixed(2)} BPS</div>
         <div className="text-lg text-gray-500">
-          {Math.round(ntpm)} NTMP · {gameModeByName[state.mode].gridSize}x{gameModeByName[state.mode].gridSize}
+          {Math.round(ntpm)} NTMP · {modeConfig.gridSize}x{modeConfig.gridSize}
         </div>
       </div>
 
       <div className="grid-30 gap-0 rounded border">
-        {Array.from({ length: gameModeByName[state.mode].gridSize ** 2 }).map((_, index) => {
-          const row = (index % gameModeByName[state.mode].gridSize) + 1;
-          const col = Math.floor(index / gameModeByName[state.mode].gridSize) + 1;
+        {Array.from({ length: modeConfig.gridSize ** 2 }).map((_, index) => {
+          const row = (index % modeConfig.gridSize) + 1;
+          const col = Math.floor(index / modeConfig.gridSize) + 1;
           const isActive = row === state.activeCell.row && col === state.activeCell.col;
           return (
             <button
