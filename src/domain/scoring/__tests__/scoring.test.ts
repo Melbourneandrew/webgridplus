@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeScore, calculateNtpm, calculateBps } from "..";
+import {
+  calculateBps,
+  calculateNtpm,
+  clampScoreToDisplayFloor,
+  computeScore,
+  ntpmAsRoundedDisplay,
+} from "..";
 import { BITS_PER_TARGET_CONSTANT } from "../constants";
 
 describe("scoring", () => {
@@ -53,5 +59,23 @@ describe("scoring", () => {
       bps: (26 * Math.log2(30 * 30 - 1)) / 60,
     };
     expect(result).toEqual(expected);
+  });
+
+  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid click counts: %s",
+    (clicks) => expect(() => calculateNtpm(clicks, 0, 60)).toThrow("Invalid correct clicks"),
+  );
+
+  it("rejects non-finite NTPM and invalid grid sizes", () => {
+    expect(() => calculateBps(Number.NaN, 30)).toThrow("Invalid NTPM");
+    expect(() => calculateBps(10, 0)).toThrow("Invalid grid size");
+    expect(() => calculateBps(10, 2.5)).toThrow("Invalid grid size");
+  });
+
+  it("applies display rounding and floors defensively", () => {
+    expect(ntpmAsRoundedDisplay(10.6)).toBe(11);
+    expect(ntpmAsRoundedDisplay(Number.NaN)).toBe(0);
+    expect(clampScoreToDisplayFloor(-1)).toBe(0);
+    expect(clampScoreToDisplayFloor(4.5, 2)).toBe(4.5);
   });
 });

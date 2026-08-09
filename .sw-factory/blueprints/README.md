@@ -12,4 +12,4 @@ Files:
 - [package-structure.md](./package-structure.md)
 - [test-strategy.md](./test-strategy.md)
 - [migration-plan.md](./migration-plan.md)
-
+- [implementation-status.md](./implementation-status.md) — implementation traceability and known drift

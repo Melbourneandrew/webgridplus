@@ -18,8 +18,3 @@ a {
 a:hover {
   text-decoration: underline;
 }
-
-.grid-30 {
-  display: grid;
-  grid-template-columns: repeat(30, minmax(0, 1fr));
-}

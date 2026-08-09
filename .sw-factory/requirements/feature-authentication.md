@@ -2,7 +2,7 @@
 This feature covers signup, login, session checks, and session termination behavior used across navigation and content visibility.
 
 ## Terminology
-- Session: Supabase/identity state indicating signed-in status.
+- Session: server-side SQLite session state referenced by a secure, HTTP-only cookie.
 - New account flow: onboarding through email + password.
 
 ## Requirements
@@ -39,4 +39,3 @@ As a signed-in user, I want to sign out, so I can end the current session.
 
 #### AC-AUTH-004.1
 When sign-out is triggered, the user shall be routed to login and treated as unauthenticated.
-

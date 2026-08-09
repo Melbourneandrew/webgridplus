@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   flattenCell,
+  gridCellCount,
   isGridCellValid,
   pickDifferentCell,
+  pickRandomCell,
   unflattenCell,
 } from "../grid";
 
@@ -28,5 +30,31 @@ describe("grid", () => {
 
     const selected = pickDifferentCell(30, { row: 1, col: 1 }, rng);
     expect(selected).toEqual({ row: 1, col: 16 });
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid grid size %s",
+    (size) => expect(() => gridCellCount(size)).toThrow("Invalid grid size"),
+  );
+
+  it("round-trips every cell in a small grid", () => {
+    for (let index = 0; index < gridCellCount(4); index += 1) {
+      expect(flattenCell(unflattenCell(index, 4), 4)).toBe(index);
+    }
+  });
+
+  it("maps RNG boundaries to the first and last cells", () => {
+    expect(pickRandomCell(3, () => 0)).toEqual({ row: 1, col: 1 });
+    expect(pickRandomCell(3, () => 0.999999)).toEqual({ row: 3, col: 3 });
+  });
+
+  it("uses the only cell for a one-by-one grid", () => {
+    expect(pickDifferentCell(1, { row: 1, col: 1 }, () => 0)).toEqual({ row: 1, col: 1 });
+  });
+
+  it("rejects invalid flattened indexes and cells", () => {
+    expect(() => unflattenCell(-1, 3)).toThrow("Invalid cell index");
+    expect(() => unflattenCell(9, 3)).toThrow("Invalid cell index");
+    expect(() => flattenCell({ row: 4, col: 1 }, 3)).toThrow("Invalid grid cell");
   });
 });

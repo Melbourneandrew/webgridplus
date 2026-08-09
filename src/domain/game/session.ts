@@ -3,17 +3,18 @@ import { isGridCellValid, pickDifferentCell, type GridCell } from "./grid";
 
 export interface GameState {
   mode: GameModeName;
+  gridSize: number;
   isGameStarted: boolean;
   isGameOver: boolean;
   secondsLeft: number;
+  endsAtMs: number | null;
   activeCell: GridCell;
   correctClicks: number;
   incorrectClicks: number;
 }
 
-const createInitialActiveCell = (mode: GameModeName): GridCell => {
-  const gridConfig = gameModeByName[mode];
-  const mid = Math.floor(gridConfig.gridSize / 2);
+const createInitialActiveCell = (gridSize: number): GridCell => {
+  const mid = Math.floor(gridSize / 2);
 
   return {
     row: mid + 1,
@@ -21,36 +22,40 @@ const createInitialActiveCell = (mode: GameModeName): GridCell => {
   };
 };
 
-export const createGameState = (mode: GameModeName): GameState => {
+export const createGameState = (mode: GameModeName, gridSize = gameModeByName[mode].gridSize): GameState => {
   const gridConfig = gameModeByName[mode];
   return {
     mode,
+    gridSize,
     isGameStarted: false,
     isGameOver: false,
     secondsLeft: gridConfig.timeSeconds,
-    activeCell: createInitialActiveCell(mode),
+    endsAtMs: null,
+    activeCell: createInitialActiveCell(gridSize),
     correctClicks: 0,
     incorrectClicks: 0,
   };
 };
 
-export function createGridGameState(mode: GameModeName): GameState {
-  return createGameState(mode);
+export function createGridGameState(mode: GameModeName, gridSize?: number): GameState {
+  return createGameState(mode, gridSize);
 }
 
-export const tickSession = (state: GameState): GameState => {
+export const syncSessionClock = (state: GameState, nowMs: number): GameState => {
   if (state.isGameOver || !state.isGameStarted) {
     return state;
   }
 
-  const nextSecondsLeft = state.secondsLeft - 1;
+  const endsAtMs = state.endsAtMs ?? nowMs + state.secondsLeft * 1000;
+  const nextSecondsLeft = Math.max(0, Math.ceil((endsAtMs - nowMs) / 1000));
   if (nextSecondsLeft > 0) {
-    return { ...state, secondsLeft: nextSecondsLeft };
+    return { ...state, endsAtMs, secondsLeft: nextSecondsLeft };
   }
 
   return {
     ...state,
     secondsLeft: 0,
+    endsAtMs,
     isGameOver: true,
     isGameStarted: false,
   };
@@ -66,10 +71,9 @@ export const resolveTargetMove = (
     return state;
   }
 
-  const gridConfig = gameModeByName[state.mode];
   return {
     ...state,
-    activeCell: nextTarget(gridConfig.gridSize, state.activeCell),
+    activeCell: nextTarget(state.gridSize, state.activeCell),
   };
 };
 
@@ -77,17 +81,21 @@ export const registerCellClick = (
   state: GameState,
   clickRow: number,
   clickCol: number,
-  selectNextTarget: TargetSelector = (size, previous) => pickDifferentCell(size, previous)
+  selectNextTarget: TargetSelector = (size, previous) => pickDifferentCell(size, previous),
+  nowMs = Date.now(),
 ): GameState => {
   if (state.isGameOver) {
     return state;
   }
 
-  const startedState = state.isGameStarted ? state : { ...state, isGameStarted: true };
-  const gridConfig = gameModeByName[state.mode];
+  const startedState = state.isGameStarted ? state : {
+    ...state,
+    isGameStarted: true,
+    endsAtMs: nowMs + state.secondsLeft * 1000,
+  };
   const clickCell = { row: clickRow, col: clickCol };
 
-  if (!isGridCellValid(gridConfig.gridSize, clickCell)) {
+  if (!isGridCellValid(state.gridSize, clickCell)) {
     return {
       ...startedState,
       incorrectClicks: startedState.incorrectClicks + 1,
@@ -110,7 +118,7 @@ export const registerCellClick = (
   };
 };
 
-export const resetSession = (state: GameState, nextMode?: GameModeName): GameState => {
+export const resetSession = (state: GameState, nextMode?: GameModeName, gridSize = state.gridSize): GameState => {
   const mode = nextMode ?? state.mode;
-  return createGridGameState(mode);
+  return createGridGameState(mode, gridSize);
 };

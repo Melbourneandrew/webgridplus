@@ -27,3 +27,10 @@
 - Added basic Playwright smoke tests and Vitest configuration.
 - Added precommit hook that runs typecheck + unit tests.
 - Updated runtime dependencies and removed Vue/Supabase packages.
+
+## 2026-08-07
+
+- Expanded the test suite with grid/scoring/session edge cases, profile-picture filesystem safety, and an in-memory baseline migration contract.
+- Sanitized uploaded profile-picture filenames to prevent client-supplied paths from escaping `public/profile-pictures`.
+- Pinned the supported local runtime to Node 22 and rebuilt `better-sqlite3` after a Node ABI mismatch.
+- Audited requirements and blueprints against implementation and added an explicit implementation-status/drift record.

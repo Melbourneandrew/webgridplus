@@ -4,7 +4,7 @@
 Players need a fast, low-friction way to run a reflex benchmark-style game and compare their scores, but current ad-hoc behavior depends on a single frontend stack and implicit Supabase data contracts, making the app difficult to evolve safely.
 
 ## Current State
-Webgrid+ currently runs as a Vue/Vite single-page client app with Supabase-hosted data access for auth, gameplay persistence, leaderboard lookup, profile details, and profile image upload. Game flow includes two modes (Regular 60s and Blitz 15s), in-browser session timing, and score computation from click accuracy/speed.
+The local rewrite now runs as a Next.js App Router application with SQLite/Drizzle persistence and server-side cookie sessions. The former Vue/Vite and Supabase implementation remains the migration baseline rather than the active local runtime. Game flow includes two modes (Regular 60s and Blitz 15s), in-browser session timing, and score computation from click accuracy/speed. See the blueprint implementation-status record for remaining parity gaps.
 
 ## Product Description
 Webgrid+ is a browser game experience where users:
@@ -35,4 +35,3 @@ Webgrid+ is a browser game experience where users:
 - Use SQLite + Drizzle ORM for persistence in the target architecture.
 - Separate frontend, domain services, and data layer into clear, testable packages/modules.
 - Keep game logic deterministic and unit-testable independent of UI framework.
-

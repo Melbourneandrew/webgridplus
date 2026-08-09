@@ -1,6 +1,9 @@
 {
   "name": "webgridplus",
   "private": true,
+  "engines": {
+    "node": ">=20 <23"
+  },
   "version": "0.0.0",
   "type": "module",
   "scripts": {

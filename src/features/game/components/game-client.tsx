@@ -8,33 +8,44 @@ import {
   type GameState,
   registerCellClick,
   resetSession,
-  tickSession,
+  syncSessionClock,
 } from "@/domain/game/session";
 import { pickDifferentCell } from "@/domain/game/grid";
+import { GameBoard } from "./game-board";
+import { useResponsiveGridSize } from "../hooks/use-responsive-grid-size";
 
 type SubmissionResponse = {
   rank?: number | null;
   average?: number | null;
 };
 
-export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
+interface GameClientProps {
+  defaultMode: GameModeName;
+  availableModes: readonly GameModeName[];
+}
+
+export function GameClient({ defaultMode, availableModes }: GameClientProps) {
   const [state, setState] = useState(() => createGridGameState(defaultMode));
   const [results, setResults] = useState<SubmissionResponse | null>(null);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [misclickCell, setMisclickCell] = useState<string | null>(null);
+  const responsiveGridSize = useResponsiveGridSize();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const misclickFlashRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeConfig = gameModeByName[state.mode];
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.localStorage.getItem("hasVisitedWebgrid")) {
-      setShowWelcome(false);
-    }
-  }, []);
 
   const ntpm = useMemo(() => {
     return calculateNtpm(state.correctClicks, state.incorrectClicks, modeConfig.timeSeconds);
   }, [state.correctClicks, state.incorrectClicks, modeConfig.timeSeconds]);
 
-  const bps = useMemo(() => calculateBps(ntpm, modeConfig.gridSize), [modeConfig.gridSize, ntpm]);
+  const bps = useMemo(() => calculateBps(ntpm, state.gridSize), [state.gridSize, ntpm]);
+
+  useEffect(() => {
+    setState((current) => current.gridSize === responsiveGridSize
+      ? current
+      : createGridGameState(current.mode, responsiveGridSize));
+    setResults(null);
+    clearTimer();
+  }, [responsiveGridSize]);
 
   const clearTimer = () => {
     if (timerRef.current) {
@@ -43,9 +54,23 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     }
   };
 
+  const clearMisclickFlash = () => {
+    if (misclickFlashRef.current) {
+      clearTimeout(misclickFlashRef.current);
+      misclickFlashRef.current = null;
+    }
+    setMisclickCell(null);
+  };
+
+  useEffect(() => () => {
+    clearTimer();
+    if (misclickFlashRef.current) clearTimeout(misclickFlashRef.current);
+  }, []);
+
   const resetGame = (nextMode?: GameModeName) => {
     clearTimer();
-    const next = resetSession(state, nextMode);
+    clearMisclickFlash();
+    const next = resetSession(state, nextMode, responsiveGridSize);
     setState(next);
     setResults(null);
   };
@@ -56,7 +81,7 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     return {
       mode: gameState.mode,
       ntpm: finalNtpm,
-      bps: calculateBps(finalNtpm, config.gridSize),
+      bps: calculateBps(finalNtpm, gameState.gridSize),
     };
   };
 
@@ -87,14 +112,14 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     clearTimer();
     timerRef.current = setInterval(() => {
       setState((current) => {
-        const updated = tickSession(current);
+        const updated = syncSessionClock(current, Date.now());
         if (updated.isGameOver) {
           clearTimer();
           void stopAndFinish(updated);
         }
         return updated;
       });
-    }, 1000);
+    }, 100);
   };
 
   const handleCellClick = (row: number, col: number) => {
@@ -103,6 +128,7 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     }
 
     const shouldStart = !state.isGameStarted;
+    const isMisclick = row !== state.activeCell.row || col !== state.activeCell.col;
     const next = registerCellClick(
       state,
       row,
@@ -113,6 +139,14 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
     if (shouldStart && !next.isGameStarted) {
       return;
     }
+    if (isMisclick) {
+      if (misclickFlashRef.current) clearTimeout(misclickFlashRef.current);
+      setMisclickCell(`${row}-${col}`);
+      misclickFlashRef.current = setTimeout(() => {
+        setMisclickCell(null);
+        misclickFlashRef.current = null;
+      }, 150);
+    }
     if (shouldStart) {
       setState(next);
       startTimer();
@@ -122,64 +156,47 @@ export function GameClient({ defaultMode }: { defaultMode: GameModeName }) {
   };
 
   return (
-    <div className="space-y-4">
-      {showWelcome ? (
-        <div className="rounded border p-3">
-          <p className="font-bold">Welcome to Webgrid+</p>
-          <p className="text-sm text-gray-500">First-time visitors can skip this prompt forever.</p>
-          <button
-            onClick={() => {
-              setShowWelcome(false);
-              window.localStorage.setItem("hasVisitedWebgrid", "true");
-            }}
-            className="mt-2 rounded bg-black px-3 py-1 text-white"
-          >
-            I want to play
-          </button>
-        </div>
-      ) : null}
-
-      <div className="flex gap-2">
-        <button onClick={() => resetGame("regular")} className={`rounded border px-3 py-1 ${state.mode === "regular" ? "bg-black text-white" : ""}`}>Regular</button>
-        <button onClick={() => resetGame("blitz")} className={`rounded border px-3 py-1 ${state.mode === "blitz" ? "bg-black text-white" : ""}`}>Blitz</button>
-      </div>
-
-      <div className="flex flex-col items-center gap-2">
-      <div className="text-5xl font-bold">{String(state.secondsLeft).padStart(2, "0")}:00</div>
-        <div className="text-4xl font-semibold">{bps.toFixed(2)} BPS</div>
-        <div className="text-lg text-gray-500">
-          {Math.round(ntpm)} NTMP · {modeConfig.gridSize}x{modeConfig.gridSize}
-        </div>
-      </div>
-
-      <div className="grid-30 gap-0 rounded border">
-        {Array.from({ length: modeConfig.gridSize ** 2 }).map((_, index) => {
-          const row = (index % modeConfig.gridSize) + 1;
-          const col = Math.floor(index / modeConfig.gridSize) + 1;
-          const isActive = row === state.activeCell.row && col === state.activeCell.col;
-          return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(220px,300px)_minmax(0,1fr)] lg:gap-10">
+      <aside className="flex flex-col items-center gap-5 lg:sticky lg:top-6 lg:items-start">
+        <div className="flex gap-2" aria-label="Game mode">
+          {availableModes.map((mode) => (
             <button
-              key={`${row}-${col}`}
+              key={mode}
               type="button"
-              onClick={() => handleCellClick(row, col)}
-              className={`aspect-square border border-black/30 ${isActive ? "bg-blue-600" : "hover:bg-gray-200"}`}
-            />
-          );
-        })}
-      </div>
+              onClick={() => resetGame(mode)}
+              aria-pressed={state.mode === mode}
+              className={`rounded border px-3 py-1 capitalize ${state.mode === mode ? "bg-black text-white" : ""}`}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
 
-      <div className="text-center">
+        <div className="flex flex-col items-center gap-2 lg:items-start">
+          <div className="text-5xl font-bold tabular-nums">{String(state.secondsLeft).padStart(2, "0")}:00</div>
+          <div className="text-4xl font-semibold tabular-nums">{bps.toFixed(2)} BPS</div>
+          <div className="text-lg text-gray-500">
+            {Math.round(ntpm)} NTMP · {state.gridSize}x{state.gridSize}
+          </div>
+        </div>
+
         {state.isGameOver ? (
-          <div>
+          <div className="text-center lg:text-left">
             <p className="text-2xl">Your score: {bps.toFixed(2)} BPS</p>
             {results && results.rank != null ? <p>Rank: {results.rank}</p> : null}
             {results && results.average != null ? <p>All-time average: {results.average.toFixed(2)} BPS</p> : <p className="text-sm text-gray-500">Sign in to save this score.</p>}
             <button onClick={() => resetGame()} className="mt-2 rounded border px-3 py-1">Play Again</button>
           </div>
         ) : null}
-      </div>
+        {!state.isGameOver ? <button onClick={() => resetGame()} className="rounded border px-3 py-1">Reset</button> : null}
+      </aside>
 
-      {!state.isGameOver ? <button onClick={() => resetGame()} className="rounded border px-3 py-1">Reset</button> : null}
+      <GameBoard
+        size={state.gridSize}
+        activeCell={state.activeCell}
+        misclickCell={misclickCell}
+        onCellClick={handleCellClick}
+      />
     </div>
   );
 }
