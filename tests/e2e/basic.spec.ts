@@ -72,17 +72,25 @@ test("account pages have descriptive titles", async ({ page }) => {
 });
 
 test("signing up logs the user in immediately and persists the session", async ({ page }) => {
-  const email = `signup-${Date.now()}@example.com`;
+  const uniqueId = Date.now();
+  const email = `signup-${uniqueId}@example.com`;
+  const displayName = `Signup Test ${uniqueId}`;
 
   await page.goto("/signup");
-  await page.getByLabel("Display name").fill("Signup Test");
+  await page.getByLabel("Display name").fill(displayName);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("correct-horse-battery-staple");
   await page.getByRole("button", { name: "Create account" }).click();
 
   await expect(page).toHaveURL(/\/game$/);
   await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Log in" })).toHaveCount(0);
+
+  // Production Next.js prefetches links. Logout must be a POST button so an
+  // idle authenticated page cannot revoke its own session.
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
 
   const cookies = await page.context().cookies();
   const accessCookie = cookies.find(({ name }) => name === "wgp_access");
@@ -95,7 +103,23 @@ test("signing up logs the user in immediately and persists the session", async (
   await page.reload();
   await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
 
+  const gameResponse = await page.request.post("/api/games", {
+    headers: { cookie: `wgp_access=${accessCookie?.value}` },
+    data: { gameType: "regular", ntpm: 100, bps: 1.23 },
+  });
+  expect(gameResponse.status()).toBe(200);
+  expect(await gameResponse.json()).toEqual(
+    expect.objectContaining({ playedGameId: expect.any(Number) }),
+  );
+
+  await page.goto("/leaderboard?mode=regular");
+  const row = page.getByRole("row").filter({ hasText: displayName });
+  await expect(row).toContainText("1.23");
+
   await page.context().clearCookies({ name: "wgp_access" });
+  await expect(page.context().cookies()).resolves.toEqual(
+    expect.arrayContaining([expect.objectContaining({ name: "wgp_refresh" })]),
+  );
   await page.reload();
   await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
   await expect(page.context().cookies()).resolves.toEqual(

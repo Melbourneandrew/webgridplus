@@ -8,12 +8,9 @@ export function middleware(request: NextRequest) {
     !request.cookies.has(ACCESS_COOKIE_NAME) &&
     request.cookies.has(REFRESH_COOKIE_NAME)
   ) {
-    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
-    const protocol = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
-    const origin = process.env.NODE_ENV === "production"
-      ? process.env.NEXT_PUBLIC_APP_URL ?? "https://webgridplus.com"
-      : `${protocol}://${host}`;
-    const refreshUrl = new URL("/api/auth/refresh", origin);
+    const refreshUrl = request.nextUrl.clone();
+    refreshUrl.pathname = "/api/auth/refresh";
+    refreshUrl.search = "";
     refreshUrl.searchParams.set("returnTo", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(refreshUrl);
   }

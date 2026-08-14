@@ -14,7 +14,7 @@ export async function getGameTypeIdByName(typeName: string) {
 }
 
 export async function getRankForPlayedGame(playedGameId: number, gameTypeId: number) {
-  const rows = await db
+  const row = db
     .select({
       rank: sql<number>`1 + (
         SELECT COUNT(*)
@@ -24,25 +24,27 @@ export async function getRankForPlayedGame(playedGameId: number, gameTypeId: num
       )`,
     })
     .from(playedGames)
-    .where(eq(playedGames.id, playedGameId));
+    .where(eq(playedGames.id, playedGameId))
+    .get();
 
-  const raw = rows[0]?.rank;
+  const raw = row?.rank;
   return raw == null ? null : toNumber(raw);
 }
 
 export async function addPlayedGame(userId: string, gameTypeId: number, bps: number) {
-  const row = await db
+  const row = db
     .insert(playedGames)
     .values({ userId, gameTypeId, bps, playedAt: new Date() })
-    .returning({ id: playedGames.id, userId: playedGames.userId, gameTypeId: playedGames.gameTypeId });
+    .returning({ id: playedGames.id, userId: playedGames.userId, gameTypeId: playedGames.gameTypeId })
+    .get();
 
-  if (!row[0]) return null;
+  if (!row) return null;
   await refreshProfileStats(userId, gameTypeId);
-  return row[0];
+  return row;
 }
 
 export async function getLeaderboardRows(gameTypeId: number, limit = 100) {
-  const rows = await db
+  const rows = db
     .select({
       id: playedGames.id,
       userId: playedGames.userId,
@@ -55,34 +57,36 @@ export async function getLeaderboardRows(gameTypeId: number, limit = 100) {
     .innerJoin(profiles, eq(playedGames.userId, profiles.id))
     .where(eq(playedGames.gameTypeId, gameTypeId))
     .orderBy(desc(playedGames.bps), desc(playedGames.playedAt))
-    .limit(limit);
+    .limit(limit)
+    .all();
 
   return rows.map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
 export async function getProfileStatsRow(userId: string, gameTypeId: number) {
-  const aggregates = await db
+  const aggregateRow = db
     .select({
       highestScore: sql<number>`MAX(${playedGames.bps})`,
       averageScore: avg(playedGames.bps),
       totalGamesPlayed: count(playedGames.id),
     })
     .from(playedGames)
-    .where(and(eq(playedGames.userId, userId), eq(playedGames.gameTypeId, gameTypeId)));
+    .where(and(eq(playedGames.userId, userId), eq(playedGames.gameTypeId, gameTypeId)))
+    .get();
 
-  const aggregateRow = aggregates[0];
   if (!aggregateRow?.totalGamesPlayed) {
     return null;
   }
 
-  const rankRows = await db
+  const rankRows = db
     .select({
       userId: playedGames.userId,
       bestScore: sql<number>`MAX(${playedGames.bps})`,
     })
     .from(playedGames)
     .where(eq(playedGames.gameTypeId, gameTypeId))
-    .groupBy(playedGames.userId);
+    .groupBy(playedGames.userId)
+    .all();
 
   const targetScore = toNumber(aggregateRow.highestScore);
   const sorted = rankRows.toSorted(
@@ -104,7 +108,7 @@ export async function refreshProfileStats(userId: string, gameTypeId: number) {
     return;
   }
 
-  await db
+  db
     .insert(profileStats)
     .values({
       profileId: userId,
@@ -124,7 +128,8 @@ export async function refreshProfileStats(userId: string, gameTypeId: number) {
         totalGamesPlayed: raw.totalGamesPlayed,
         updatedAt: new Date(),
       },
-    });
+    })
+    .run();
 }
 
 export async function getProfileStatsFromMaterialized(userId: string, gameTypeId: number) {
