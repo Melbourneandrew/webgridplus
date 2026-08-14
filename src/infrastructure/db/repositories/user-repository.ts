@@ -78,6 +78,12 @@ export async function getAccessSessionUser(accessTokenHash: string) {
   return getUserById(session.userId);
 }
 
+export async function getRefreshSessionUser(refreshTokenHash: string) {
+  const session = db.select().from(sessions).where(eq(sessions.refreshTokenHash, refreshTokenHash)).get();
+  if (!session || session.refreshExpiresAt <= new Date()) return null;
+  return getUserById(session.userId);
+}
+
 export async function rotateSession(
   refreshTokenHash: string,
   tokens: { accessTokenHash: string; accessExpiresAt: Date; refreshTokenHash: string }
