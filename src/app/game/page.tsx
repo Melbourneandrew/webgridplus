@@ -1,13 +1,17 @@
-import { gameModes, type GameModeName } from "@/domain/game/modes";
+import type { Metadata } from "next";
+import { gameModes, parseGameMode } from "@/domain/game/modes";
 import { GameShell } from "@/features/game/components/game-shell";
 
 interface GamePageProps {
   searchParams?: {
-    mode?: string;
+    mode?: string | string[];
   };
 }
 
+export const metadata: Metadata = {
+  title: "Play",
+};
+
 export default function GamePage({ searchParams }: GamePageProps) {
-  const mode = searchParams?.mode === "blitz" ? "blitz" : "regular";
-  return <GameShell defaultMode={mode} availableModes={gameModes} />;
+  return <GameShell defaultMode={parseGameMode(searchParams?.mode)} availableModes={gameModes} />;
 }

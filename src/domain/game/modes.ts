@@ -1,6 +1,11 @@
 export const gameModes = ["regular", "blitz"] as const;
 export type GameModeName = (typeof gameModes)[number];
 
+export function parseGameMode(value: string | string[] | undefined): GameModeName {
+  const mode = Array.isArray(value) ? value[0] : value;
+  return gameModes.includes(mode as GameModeName) ? (mode as GameModeName) : "regular";
+}
+
 export const gameModeByName: Record<
   GameModeName,
   {

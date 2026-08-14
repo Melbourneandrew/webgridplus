@@ -23,11 +23,15 @@ export const users = sqliteTable("users", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const sessions = sqliteTable("sessions", {
+export const sessions = sqliteTable("auth_sessions", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  accessTokenHash: text("access_token_hash").notNull().unique(),
+  accessExpiresAt: integer("access_expires_at", { mode: "timestamp" }).notNull(),
+  refreshTokenHash: text("refresh_token_hash").notNull().unique(),
+  refreshExpiresAt: integer("refresh_expires_at", { mode: "timestamp" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  rotatedAt: integer("rotated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
 export const profiles = sqliteTable("profiles", {

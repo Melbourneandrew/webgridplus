@@ -12,7 +12,7 @@ export function GameBoard({ size, activeCell, misclickCell, onCellClick }: GameB
     <div
       aria-label="Game grid"
       data-grid-size={size}
-      className="mx-auto grid w-full max-w-[720px] gap-0 rounded border lg:mx-0 lg:justify-self-end"
+      className="mx-auto grid w-[min(100%,calc(100dvh-8.5rem))] max-w-[720px] gap-0 rounded border lg:mx-0 lg:justify-self-end"
       style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
     >
       {Array.from({ length: size ** 2 }, (_, index) => {

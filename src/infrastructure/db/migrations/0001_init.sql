@@ -14,12 +14,18 @@ CREATE TABLE IF NOT EXISTS users (
   created_at INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS sessions (
+CREATE TABLE IF NOT EXISTS auth_sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires_at INTEGER NOT NULL,
-  created_at INTEGER NOT NULL
+  access_token_hash TEXT NOT NULL UNIQUE,
+  access_expires_at INTEGER NOT NULL,
+  refresh_token_hash TEXT NOT NULL UNIQUE,
+  refresh_expires_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  rotated_at INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS auth_sessions_user_idx ON auth_sessions(user_id);
 
 CREATE TABLE IF NOT EXISTS profiles (
   id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

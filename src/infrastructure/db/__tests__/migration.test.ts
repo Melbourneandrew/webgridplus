@@ -25,11 +25,11 @@ describe("initial database migration", () => {
       .all() as Array<{ name: string }>;
 
     expect(tables.map(({ name }) => name)).toEqual([
+      "auth_sessions",
       "game_types",
       "played_games",
       "profile_stats",
       "profiles",
-      "sessions",
       "users",
     ]);
   });

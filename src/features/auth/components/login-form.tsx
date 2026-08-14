@@ -1,10 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { AuthFormShell, authInputClassName, authSubmitClassName } from "./auth-form-shell";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,23 +24,27 @@ export function LoginForm() {
     if (!response.ok) {
       setError(payload.error ?? "Invalid username or password");
     } else {
-      router.push("/game");
-      router.refresh();
+      window.location.replace("/game");
+      return;
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="mx-auto mt-10 max-w-md rounded border p-4">
-      <h1 className="mb-4 text-2xl font-bold">Login to Webgrid+</h1>
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" required />
-        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" required />
-        <button disabled={loading} type="submit" className="rounded bg-black px-3 py-1 text-white">Login</button>
+    <AuthFormShell activeTab="login" title="Welcome back" subtitle="Log in to keep playing and track your scores.">
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <label className="grid gap-1.5 text-sm font-medium">
+          Email
+          <input className={authInputClassName} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" required />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Password
+          <input className={authInputClassName} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" autoComplete="current-password" required />
+        </label>
+        {error ? <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+        <button disabled={loading} type="submit" className={authSubmitClassName}>{loading ? "Logging in…" : "Log in"}</button>
       </form>
-      <a href="/signup" className="mt-2 block text-center underline">Signup</a>
-      {error ? <p className="text-red-600">{error}</p> : null}
-    </div>
+    </AuthFormShell>
   );
 }

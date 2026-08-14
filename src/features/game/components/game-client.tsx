@@ -12,6 +12,7 @@ import {
 } from "@/domain/game/session";
 import { pickDifferentCell } from "@/domain/game/grid";
 import { GameBoard } from "./game-board";
+import { GameModeTabs } from "./game-mode-tabs";
 import { useResponsiveGridSize } from "../hooks/use-responsive-grid-size";
 
 type SubmissionResponse = {
@@ -47,6 +48,15 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
     clearTimer();
   }, [responsiveGridSize]);
 
+  useEffect(() => {
+    setState((current) => current.mode === defaultMode
+      ? current
+      : createGridGameState(defaultMode, responsiveGridSize));
+    setResults(null);
+    clearTimer();
+    clearMisclickFlash();
+  }, [defaultMode, responsiveGridSize]);
+
   const clearTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -73,6 +83,11 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
     const next = resetSession(state, nextMode, responsiveGridSize);
     setState(next);
     setResults(null);
+  };
+
+  const selectMode = (mode: GameModeName) => {
+    if (mode === state.mode) return;
+    resetGame(mode);
   };
 
   const scoreForState = (gameState: GameState) => {
@@ -158,19 +173,16 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(220px,300px)_minmax(0,1fr)] lg:gap-10">
       <aside className="flex flex-col items-center gap-5 lg:sticky lg:top-6 lg:items-start">
-        <div className="flex gap-2" aria-label="Game mode">
-          {availableModes.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => resetGame(mode)}
-              aria-pressed={state.mode === mode}
-              className={`rounded border px-3 py-1 capitalize ${state.mode === mode ? "bg-black text-white" : ""}`}
-            >
-              {mode}
-            </button>
-          ))}
+        <div className="text-center lg:text-left">
+          <h1 className="text-4xl font-bold">Play Webgrid+</h1>
+          <p className="mt-1 text-sm text-gray-500">Click the blue square to begin. Misclicks are penalized.</p>
         </div>
+
+        <GameModeTabs
+          activeMode={state.mode}
+          availableModes={availableModes}
+          onSelect={selectMode}
+        />
 
         <div className="flex flex-col items-center gap-2 lg:items-start">
           <div className="text-5xl font-bold tabular-nums">{String(state.secondsLeft).padStart(2, "0")}:00</div>
@@ -185,10 +197,10 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
             <p className="text-2xl">Your score: {bps.toFixed(2)} BPS</p>
             {results && results.rank != null ? <p>Rank: {results.rank}</p> : null}
             {results && results.average != null ? <p>All-time average: {results.average.toFixed(2)} BPS</p> : <p className="text-sm text-gray-500">Sign in to save this score.</p>}
-            <button onClick={() => resetGame()} className="mt-2 rounded border px-3 py-1">Play Again</button>
+            <button onClick={() => resetGame()} className="mt-2 border border-black px-3 py-1">Play Again</button>
           </div>
         ) : null}
-        {!state.isGameOver ? <button onClick={() => resetGame()} className="rounded border px-3 py-1">Reset</button> : null}
+        {!state.isGameOver ? <button onClick={() => resetGame()} className="border border-black px-3 py-1">Reset</button> : null}
       </aside>
 
       <GameBoard

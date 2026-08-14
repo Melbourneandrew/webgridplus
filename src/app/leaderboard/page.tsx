@@ -1,12 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getLeaderboardPage } from "@/services/leaderboard/leaderboard-service";
 import { gameModes, type GameModeName } from "@/domain/game/modes";
+import { GameModeTabs } from "@/features/game/components/game-mode-tabs";
 
 interface SearchParams {
   searchParams?: {
     mode?: string;
   };
 }
+
+export const metadata: Metadata = {
+  title: "Leaderboard",
+};
 
 export default async function LeaderboardPage({
   searchParams,
@@ -18,18 +24,8 @@ export default async function LeaderboardPage({
   return (
     <section className="mx-auto max-w-6xl">
       <h1 className="mb-4 text-3xl font-bold">{mode === "regular" ? "Regular" : "Blitz"} Leaderboard</h1>
-      <div className="mb-4 flex gap-2">
-        {gameModes.map((item) => (
-          <Link
-            key={item}
-            href={`/leaderboard?mode=${item}`}
-            className={`rounded border px-4 py-2 ${
-              mode === item ? "bg-black text-white" : "bg-white"
-            }`}
-          >
-            {item[0].toUpperCase() + item.slice(1)}
-          </Link>
-        ))}
+      <div className="mb-4">
+        <GameModeTabs activeMode={mode} availableModes={gameModes} />
       </div>
       <table className="w-full border-collapse border border-black/20">
         <thead>

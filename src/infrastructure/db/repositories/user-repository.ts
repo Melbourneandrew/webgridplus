@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
-import bcrypt from "bcryptjs";
-import { and, eq, gt } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
+import { hashPassword, verifyPasswordHash } from "@/services/auth/passwords";
 import { db } from "../client";
 import { profiles, sessions, users } from "../schema";
 
@@ -17,23 +17,30 @@ export async function createUser(params: {
   email: string;
   password: string;
 }) {
-  const hashed = await bcrypt.hash(params.password, 10);
+  const hashed = await hashPassword(params.password);
   const id = randomUUID();
 
-  db.transaction((tx) => {
-    tx.insert(users).values({
-      id,
-      displayName: params.displayName,
-      email: params.email,
-      passwordHash: hashed,
-      createdAt: new Date(),
+  try {
+    db.transaction((tx) => {
+      tx.insert(users).values({
+        id,
+        displayName: params.displayName,
+        email: params.email,
+        passwordHash: hashed,
+        createdAt: new Date(),
+      }).run();
+      tx.insert(profiles).values({
+        id,
+        displayName: params.displayName,
+        createdAt: new Date(),
+      }).run();
     });
-    tx.insert(profiles).values({
-      id,
-      displayName: params.displayName,
-      createdAt: new Date(),
-    });
-  });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+      return null;
+    }
+    throw error;
+  }
 
   return getUserById(id);
 }
@@ -41,33 +48,54 @@ export async function createUser(params: {
 export async function verifyPassword(email: string, password: string) {
   const found = await getUserByEmail(email);
   if (!found) return null;
-  const valid = await bcrypt.compare(password, found.passwordHash);
+  const valid = await verifyPasswordHash(found.passwordHash, password);
   if (!valid) return null;
   return found;
 }
 
-export async function createSession(userId: string, sessionId: string, expiresAt: Date) {
-  await db
-    .delete(sessions)
-    .where(and(eq(sessions.userId, userId), gt(sessions.expiresAt, new Date(0))));
+export async function createSession(params: {
+  id: string;
+  userId: string;
+  accessTokenHash: string;
+  accessExpiresAt: Date;
+  refreshTokenHash: string;
+  refreshExpiresAt: Date;
+}) {
   await db.insert(sessions).values({
-    id: sessionId,
-    userId,
-    expiresAt,
+    ...params,
     createdAt: new Date(),
+    rotatedAt: new Date(),
   });
 }
 
-export async function getSessionUser(sessionId: string) {
-  const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
-  if (!session || session.expiresAt < new Date()) {
+export async function getAccessSessionUser(accessTokenHash: string) {
+  const session = await db.select().from(sessions).where(eq(sessions.accessTokenHash, accessTokenHash)).get();
+  if (!session || session.accessExpiresAt <= new Date() || session.refreshExpiresAt <= new Date()) {
     return null;
   }
   return getUserById(session.userId);
 }
 
-export async function destroySession(sessionId: string) {
-  await db.delete(sessions).where(eq(sessions.id, sessionId));
+export async function rotateSession(
+  refreshTokenHash: string,
+  tokens: { accessTokenHash: string; accessExpiresAt: Date; refreshTokenHash: string }
+) {
+  const userId = db.transaction((tx) => {
+    const session = tx.select().from(sessions).where(eq(sessions.refreshTokenHash, refreshTokenHash)).get();
+    if (!session || session.refreshExpiresAt <= new Date()) return null;
+    tx.update(sessions)
+      .set({ ...tokens, rotatedAt: new Date() })
+      .where(eq(sessions.id, session.id))
+      .run();
+    return session.userId;
+  });
+  return userId ? getUserById(userId) : null;
+}
+
+export async function destroySessionByTokenHash(tokenHash: string) {
+  await db.delete(sessions).where(
+    or(eq(sessions.accessTokenHash, tokenHash), eq(sessions.refreshTokenHash, tokenHash))
+  );
 }
 
 export async function getProfile(userId: string) {

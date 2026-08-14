@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { type ProfilePageModel } from "@/services/profile/profile-service";
 
 export function ProfileStatsCard({ profile }: { profile: ProfilePageModel }) {
@@ -11,11 +10,7 @@ export function ProfileStatsCard({ profile }: { profile: ProfilePageModel }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={profile.profilePicture} alt="profile" className="h-16 w-16 rounded-full object-cover" />
           ) : null}
-          <div>
-            <h2 className="text-xl font-semibold">{profile.displayName}</h2>
-            <p className="text-sm text-gray-600">{profile.userId}</p>
-          </div>
-          <Link href="/" className="ml-auto underline">Copy profile</Link>
+          <h2 className="text-xl font-semibold">{profile.displayName}</h2>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

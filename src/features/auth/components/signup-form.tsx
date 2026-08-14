@@ -1,10 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { AuthFormShell, authInputClassName, authSubmitClassName } from "./auth-form-shell";
 
 export function SignupForm() {
-  const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,24 +25,33 @@ export function SignupForm() {
     if (!response.ok) {
       setError(payload.error ?? "Error creating account");
     } else {
-      router.push("/game");
-      router.refresh();
+      // The root layout is rendered from the HttpOnly session cookie. A document
+      // navigation guarantees the first authenticated screen includes that state.
+      window.location.replace("/game");
+      return;
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="mx-auto mt-10 max-w-md rounded border p-4">
-      <h1 className="mb-4 text-2xl font-bold">Sign Up for Webgrid+</h1>
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Display Name" required />
-        <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" required />
-        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" required />
-        <button disabled={loading} type="submit" className="rounded bg-black px-3 py-1 text-white">Sign up</button>
+    <AuthFormShell activeTab="signup" title="Create your account" subtitle="Save your scores and claim a spot on the leaderboard.">
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <label className="grid gap-1.5 text-sm font-medium">
+          Display name
+          <input className={authInputClassName} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="How you’ll appear" autoComplete="nickname" required />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Email
+          <input className={authInputClassName} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" required />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Password
+          <input className={authInputClassName} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" autoComplete="new-password" minLength={8} required />
+        </label>
+        {error ? <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+        <button disabled={loading} type="submit" className={authSubmitClassName}>{loading ? "Creating account…" : "Create account"}</button>
       </form>
-      <a href="/login" className="mt-2 block text-center underline">Login</a>
-      {error ? <p className="text-red-600">{error}</p> : null}
-    </div>
+    </AuthFormShell>
   );
 }

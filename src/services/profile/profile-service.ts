@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { gameModeByName } from "@/domain/game/modes";
 import { getProfile } from "@/infrastructure/db/repositories/user-repository";
 import {
@@ -23,7 +24,7 @@ export type ProfilePageModel = {
   blitz: ProfileModeStats;
 };
 
-export async function getProfileByUserId(userId: string): Promise<ProfilePageModel | null> {
+export const getProfileByUserId = cache(async (userId: string): Promise<ProfilePageModel | null> => {
   const profile = await getProfile(userId);
   if (!profile) return null;
 
@@ -37,7 +38,7 @@ export async function getProfileByUserId(userId: string): Promise<ProfilePageMod
     regular,
     blitz,
   };
-}
+});
 
 async function loadModeStats(userId: string, gameTypeId: number): Promise<ProfileModeStats> {
   const materialized = await getProfileStatsFromMaterialized(userId, gameTypeId);

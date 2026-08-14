@@ -1,7 +1,27 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { SiteNav } from "@/components/site-nav";
 import { getCurrentUser } from "@/services/auth/session";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Webgrid+",
+    template: "%s | Webgrid+",
+  },
+  description: "Test and improve your point-and-click speed.",
+  icons: {
+    icon: [
+      {
+        url: "/wgp-favicon.png?v=2",
+        type: "image/png",
+        sizes: "64x64",
+      },
+    ],
+    shortcut: "/wgp-favicon.png?v=2",
+  },
+};
 
 export default async function RootLayout({
   children,
@@ -17,21 +37,20 @@ export default async function RootLayout({
               <Link href="/" className="text-2xl font-bold">
                 Webgrid+
               </Link>
-              <div className="flex gap-2">
-                <Link href="/game">Play</Link>
-                <Link href="/leaderboard">Leaderboard</Link>
-                {user ? (
-                  <>
-                    <Link href={`/profile/${user.id}`}>Profile</Link>
-                    <Link href="/auth/logout">Logout</Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/signup">Signup</Link>
-                    <Link href="/login">Login</Link>
-                  </>
-                )}
-              </div>
+              <SiteNav
+                items={[
+                  { href: "/game", label: "Play" },
+                  { href: "/leaderboard", label: "Leaderboard" },
+                  ...(user
+                    ? [
+                        { href: `/profile/${user.id}`, label: "Profile" },
+                        { href: "/auth/logout", label: "Logout" },
+                      ]
+                    : [
+                        { href: "/login", label: "Log in" },
+                      ]),
+                ]}
+              />
             </nav>
           </header>
           <main className="mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
