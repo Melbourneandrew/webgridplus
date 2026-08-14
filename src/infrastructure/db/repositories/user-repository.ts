@@ -61,11 +61,13 @@ export async function createSession(params: {
   refreshTokenHash: string;
   refreshExpiresAt: Date;
 }) {
-  await db.insert(sessions).values({
-    ...params,
-    createdAt: new Date(),
-    rotatedAt: new Date(),
-  });
+  db.insert(sessions)
+    .values({
+      ...params,
+      createdAt: new Date(),
+      rotatedAt: new Date(),
+    })
+    .run();
 }
 
 export async function getAccessSessionUser(accessTokenHash: string) {
@@ -93,9 +95,9 @@ export async function rotateSession(
 }
 
 export async function destroySessionByTokenHash(tokenHash: string) {
-  await db.delete(sessions).where(
-    or(eq(sessions.accessTokenHash, tokenHash), eq(sessions.refreshTokenHash, tokenHash))
-  );
+  db.delete(sessions)
+    .where(or(eq(sessions.accessTokenHash, tokenHash), eq(sessions.refreshTokenHash, tokenHash)))
+    .run();
 }
 
 export async function getProfile(userId: string) {
@@ -103,8 +105,9 @@ export async function getProfile(userId: string) {
 }
 
 export async function upsertProfilePicture(userId: string, profilePicture: string) {
-  await db
+  db
     .update(profiles)
     .set({ profilePicture })
-    .where(eq(profiles.id, userId));
+    .where(eq(profiles.id, userId))
+    .run();
 }
