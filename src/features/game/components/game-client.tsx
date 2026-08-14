@@ -28,6 +28,7 @@ interface GameClientProps {
 export function GameClient({ defaultMode, availableModes }: GameClientProps) {
   const [state, setState] = useState(() => createGridGameState(defaultMode));
   const [results, setResults] = useState<SubmissionResponse | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [misclickCell, setMisclickCell] = useState<string | null>(null);
   const responsiveGridSize = useResponsiveGridSize();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -45,6 +46,7 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
       ? current
       : createGridGameState(current.mode, responsiveGridSize));
     setResults(null);
+    setSaveError(null);
     clearTimer();
   }, [responsiveGridSize]);
 
@@ -53,6 +55,7 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
       ? current
       : createGridGameState(defaultMode, responsiveGridSize));
     setResults(null);
+    setSaveError(null);
     clearTimer();
     clearMisclickFlash();
   }, [defaultMode, responsiveGridSize]);
@@ -83,6 +86,7 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
     const next = resetSession(state, nextMode, responsiveGridSize);
     setState(next);
     setResults(null);
+    setSaveError(null);
   };
 
   const selectMode = (mode: GameModeName) => {
@@ -101,6 +105,7 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
   };
 
   const stopAndFinish = async (gameState: GameState) => {
+    setSaveError(null);
     const finalScore = scoreForState(gameState);
     const response = await fetch("/api/games", {
       method: "POST",
@@ -120,6 +125,9 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
       });
     } else {
       setResults(null);
+      setSaveError(response.status === 401
+        ? "Sign in to save this score."
+        : "This score could not be saved. Please try again.");
     }
   };
 
@@ -196,7 +204,9 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
           <div className="text-center lg:text-left">
             <p className="text-2xl">Your score: {bps.toFixed(2)} BPS</p>
             {results && results.rank != null ? <p>Rank: {results.rank}</p> : null}
-            {results && results.average != null ? <p>All-time average: {results.average.toFixed(2)} BPS</p> : <p className="text-sm text-gray-500">Sign in to save this score.</p>}
+            {results && results.average != null ? <p>All-time average: {results.average.toFixed(2)} BPS</p> : null}
+            {saveError ? <p role="alert" className="text-sm text-red-700">{saveError}</p> : null}
+            {!results && !saveError ? <p className="text-sm text-gray-500">Saving score…</p> : null}
             <button onClick={() => resetGame()} className="mt-2 border border-black px-3 py-1">Play Again</button>
           </div>
         ) : null}

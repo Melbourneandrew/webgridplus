@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
+import { LogoutButton } from "@/features/auth/components/logout-button";
 import { getCurrentUser } from "@/services/auth/session";
 import "./globals.css";
 
@@ -37,20 +38,18 @@ export default async function RootLayout({
               <Link href="/" className="text-2xl font-bold">
                 Webgrid+
               </Link>
-              <SiteNav
-                items={[
-                  { href: "/game", label: "Play" },
-                  { href: "/leaderboard", label: "Leaderboard" },
-                  ...(user
-                    ? [
-                        { href: `/profile/${user.id}`, label: "Profile" },
-                        { href: "/auth/logout", label: "Logout" },
-                      ]
-                    : [
-                        { href: "/login", label: "Log in" },
-                      ]),
-                ]}
-              />
+              <div className="flex items-center gap-5">
+                <SiteNav
+                  items={[
+                    { href: "/game", label: "Play" },
+                    { href: "/leaderboard", label: "Leaderboard" },
+                    ...(user
+                      ? [{ href: `/profile/${user.id}`, label: "Profile" }]
+                      : [{ href: "/login", label: "Log in" }]),
+                  ]}
+                />
+                {user ? <LogoutButton /> : null}
+              </div>
             </nav>
           </header>
           <main className="mx-auto w-full max-w-6xl px-4 py-8">{children}</main>

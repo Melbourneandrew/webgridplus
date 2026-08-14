@@ -41,6 +41,17 @@ type TokenPair = {
   refreshExpiresAt: Date;
 };
 
+type RefreshResult = {
+  user: AuthenticatedUser;
+  tokens: TokenPair;
+} | null;
+
+const REFRESH_DEDUPLICATION_MS = 10_000;
+const refreshRotations = new Map<
+  string,
+  { expiresAt: number; result: Promise<RefreshResult> }
+>();
+
 function newToken() {
   return randomBytes(32).toString("base64url");
 }
@@ -111,8 +122,7 @@ async function createAuthSession(user: AuthenticatedUser) {
   return tokens;
 }
 
-export async function refreshAuthSession(refreshToken: string) {
-  const refreshTokenHash = hashAuthToken(refreshToken);
+async function rotateRefreshToken(refreshTokenHash: string): Promise<RefreshResult> {
   const storedUser = await getRefreshSessionUser(refreshTokenHash);
   if (!storedUser) return null;
   const authenticatedUser = toAuthenticatedUser(storedUser);
@@ -123,6 +133,24 @@ export async function refreshAuthSession(refreshToken: string) {
     refreshTokenHash: hashAuthToken(tokens.refreshToken),
   });
   return user ? { user: toAuthenticatedUser(user), tokens } : null;
+}
+
+export function refreshAuthSession(refreshToken: string): Promise<RefreshResult> {
+  const refreshTokenHash = hashAuthToken(refreshToken);
+  const now = Date.now();
+  for (const [hash, rotation] of refreshRotations) {
+    if (rotation.expiresAt <= now) refreshRotations.delete(hash);
+  }
+
+  const existing = refreshRotations.get(refreshTokenHash);
+  if (existing) return existing.result;
+
+  const result = rotateRefreshToken(refreshTokenHash);
+  refreshRotations.set(refreshTokenHash, {
+    expiresAt: now + REFRESH_DEDUPLICATION_MS,
+    result,
+  });
+  return result;
 }
 
 export async function revokeAuthSession(accessToken?: string, refreshToken?: string) {
