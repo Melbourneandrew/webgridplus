@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_noStore as noStore } from "next/cache";
 import Link from "next/link";
 import { getLeaderboardPage } from "@/services/leaderboard/leaderboard-service";
 import { gameModes, type GameModeName } from "@/domain/game/modes";
@@ -14,9 +15,13 @@ export const metadata: Metadata = {
   title: "Leaderboard",
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function LeaderboardPage({
   searchParams,
 }: SearchParams) {
+  noStore();
   const mode =
     searchParams?.mode === "blitz" ? "blitz" : ("regular" as GameModeName);
   const rows = await getLeaderboardPage(mode);

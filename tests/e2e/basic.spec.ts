@@ -112,7 +112,7 @@ test("signing up logs the user in immediately and persists the session", async (
     expect.objectContaining({ playedGameId: expect.any(Number) }),
   );
 
-  await page.goto("/leaderboard?mode=regular");
+  await page.getByRole("link", { name: "Leaderboard" }).click();
   const row = page.getByRole("row").filter({ hasText: displayName });
   await expect(row).toContainText("1.23");
 

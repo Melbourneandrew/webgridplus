@@ -42,7 +42,7 @@ export default async function RootLayout({
                 <SiteNav
                   items={[
                     { href: "/game", label: "Play" },
-                    { href: "/leaderboard", label: "Leaderboard" },
+                    { href: "/leaderboard", label: "Leaderboard", reloadDocument: true },
                     ...(user
                       ? [{ href: `/profile/${user.id}`, label: "Profile" }]
                       : [{ href: "/login", label: "Log in" }]),
