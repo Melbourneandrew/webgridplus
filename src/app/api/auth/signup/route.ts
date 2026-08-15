@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { setAuthCookies, signup } from "@/services/auth/session";
 import { z } from "zod";
+import { DISPLAY_NAME_MAX_LENGTH } from "@/domain/user/display-name";
 
 const signupSchema = z.object({
-  displayName: z.string().trim().min(2).max(50),
+  displayName: z.string().trim().min(2).max(DISPLAY_NAME_MAX_LENGTH),
   email: z.string().trim().email().max(254),
   password: z.string().min(8).max(128),
 });

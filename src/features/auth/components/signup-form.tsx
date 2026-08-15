@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { AuthFormShell, authInputClassName, authSubmitClassName } from "./auth-form-shell";
+import { DISPLAY_NAME_MAX_LENGTH } from "@/domain/user/display-name";
 
 export function SignupForm() {
   const [displayName, setDisplayName] = useState("");
@@ -27,7 +28,7 @@ export function SignupForm() {
     } else {
       // The root layout is rendered from the HttpOnly session cookie. A document
       // navigation guarantees the first authenticated screen includes that state.
-      window.location.replace("/game");
+      window.location.replace("/play");
       return;
     }
 
@@ -39,7 +40,7 @@ export function SignupForm() {
       <form onSubmit={submit} className="flex flex-col gap-4">
         <label className="grid gap-1.5 text-sm font-medium">
           Display name
-          <input className={authInputClassName} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="How you’ll appear" autoComplete="nickname" required />
+          <input className={authInputClassName} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="How you’ll appear" autoComplete="nickname" minLength={2} maxLength={DISPLAY_NAME_MAX_LENGTH} required />
         </label>
         <label className="grid gap-1.5 text-sm font-medium">
           Email
