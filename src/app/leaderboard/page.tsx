@@ -32,7 +32,13 @@ export default async function LeaderboardPage({
       <div className="mb-4">
         <GameModeTabs activeMode={mode} availableModes={gameModes} />
       </div>
-      <table className="w-full border-collapse border border-black/20">
+      <table className="w-full table-fixed border-collapse border border-black/20">
+        <colgroup>
+          <col className="w-[10%]" />
+          <col className="w-[58%]" />
+          <col className="w-[14%]" />
+          <col className="w-[18%]" />
+        </colgroup>
         <thead>
           <tr>
             <th className="border p-2 text-left">Rank</th>
@@ -46,10 +52,10 @@ export default async function LeaderboardPage({
             <tr key={row.id} className="hover:bg-gray-100">
               <td className="border p-2">{row.rank}</td>
               <td className="border p-2">
-                <Link href={`/profile/${row.userId}`}>{row.displayName}</Link>
+                <Link className="block truncate" title={row.displayName} href={`/profile/${row.userId}`}>{row.displayName}</Link>
               </td>
-              <td className="border p-2">{row.bps.toFixed(2)}</td>
-              <td className="border p-2">{new Date(row.playedAt).toLocaleDateString()}</td>
+              <td className="border p-2 tabular-nums whitespace-nowrap">{row.bps.toFixed(2)}</td>
+              <td className="border p-2 whitespace-nowrap">{new Date(row.playedAt).toLocaleDateString()}</td>
             </tr>
           ))}
           {rows.length === 0 ? (

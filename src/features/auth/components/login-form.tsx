@@ -24,7 +24,7 @@ export function LoginForm() {
     if (!response.ok) {
       setError(payload.error ?? "Invalid username or password");
     } else {
-      window.location.replace("/game");
+      window.location.replace("/play");
       return;
     }
 

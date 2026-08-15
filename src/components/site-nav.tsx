@@ -7,6 +7,7 @@ type NavItem = {
   href: string;
   label: string;
   reloadDocument?: boolean;
+  activePaths?: string[];
 };
 
 export function SiteNav({ items }: { items: NavItem[] }) {
@@ -14,8 +15,11 @@ export function SiteNav({ items }: { items: NavItem[] }) {
 
   return (
     <div className="flex items-center gap-5">
-      {items.map(({ href, label, reloadDocument }) => {
-        const isActive = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+      {items.map(({ href, label, reloadDocument, activePaths }) => {
+        const paths = activePaths ?? [href];
+        const isActive = paths.some(
+          (path) => pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)),
+        );
 
         const props = {
           "aria-current": isActive ? ("page" as const) : undefined,

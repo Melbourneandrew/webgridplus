@@ -10,8 +10,20 @@ test("home page loads and shows game", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Blitz" })).toHaveCount(1);
   await expect(page.getByText(/Score/i)).not.toBeVisible();
   await expect(page.getByRole("link", { name: "Regular" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Play" })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("link", { name: "Webgrid+" }).hover();
+  await expect(page.getByRole("link", { name: "Webgrid+" })).toHaveCSS("text-decoration-line", "none");
   await page.getByRole("link", { name: "Regular" }).hover();
   await expect(page.getByRole("link", { name: "Regular" })).toHaveCSS("text-decoration-line", "none");
+});
+
+test("play route is canonical and legacy game links redirect", async ({ page }) => {
+  await page.goto("/play?mode=blitz");
+  await expect(page.getByRole("link", { name: "Play" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Blitz" })).toHaveAttribute("aria-current", "page");
+
+  await page.goto("/game?mode=regular");
+  await expect(page).toHaveURL(/\/play\?mode=regular$/);
 });
 
 test("game mode is synchronized with the URL", async ({ page }) => {
@@ -82,7 +94,7 @@ test("signing up logs the user in immediately and persists the session", async (
   await page.getByLabel("Password").fill("correct-horse-battery-staple");
   await page.getByRole("button", { name: "Create account" }).click();
 
-  await expect(page).toHaveURL(/\/game$/);
+  await expect(page).toHaveURL(/\/play$/);
   await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Log in" })).toHaveCount(0);

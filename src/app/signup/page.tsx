@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 
 export default async function SignupPage() {
   const user = await getCurrentUser();
-  if (user) redirect("/game");
+  if (user) redirect("/play");
   return <SignupForm />;
 }

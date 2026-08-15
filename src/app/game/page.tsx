@@ -1,17 +1,12 @@
-import type { Metadata } from "next";
-import { gameModes, parseGameMode } from "@/domain/game/modes";
-import { GameShell } from "@/features/game/components/game-shell";
+import { redirect } from "next/navigation";
 
-interface GamePageProps {
+interface LegacyGamePageProps {
   searchParams?: {
     mode?: string | string[];
   };
 }
 
-export const metadata: Metadata = {
-  title: "Play",
-};
-
-export default function GamePage({ searchParams }: GamePageProps) {
-  return <GameShell defaultMode={parseGameMode(searchParams?.mode)} availableModes={gameModes} />;
+export default function LegacyGamePage({ searchParams }: LegacyGamePageProps) {
+  const mode = Array.isArray(searchParams?.mode) ? searchParams.mode[0] : searchParams?.mode;
+  redirect(mode ? `/play?mode=${encodeURIComponent(mode)}` : "/play");
 }
