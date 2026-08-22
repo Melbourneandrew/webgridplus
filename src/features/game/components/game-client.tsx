@@ -193,7 +193,7 @@ export function GameClient({ defaultMode, availableModes }: GameClientProps) {
         />
 
         <div className="flex flex-col items-center gap-2 lg:items-start">
-          <div className="text-5xl font-bold tabular-nums">{String(state.secondsLeft).padStart(2, "0")}:00</div>
+          <div className="text-5xl font-bold tabular-nums">00:{String(state.secondsLeft).padStart(2, "0")}</div>
           <div className="text-4xl font-semibold tabular-nums">{bps.toFixed(2)} BPS</div>
           <div className="text-lg text-gray-500">
             {Math.round(ntpm)} NTMP · {state.gridSize}x{state.gridSize}

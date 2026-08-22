@@ -6,12 +6,35 @@ import { LogoutButton } from "@/features/auth/components/logout-button";
 import { getCurrentUser } from "@/services/auth/session";
 import "./globals.css";
 
+const siteDescription = "Test and improve your point-and-click speed.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
     default: "Webgrid+",
     template: "%s | Webgrid+",
   },
-  description: "Test and improve your point-and-click speed.",
+  description: siteDescription,
+  openGraph: {
+    type: "website",
+    siteName: "Webgrid+",
+    title: "Webgrid+",
+    description: siteDescription,
+    images: [
+      {
+        url: "/webgrid-plus-meta.png",
+        width: 1200,
+        height: 628,
+        alt: "Webgrid+ point-and-click speed game",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Webgrid+",
+    description: siteDescription,
+    images: ["/webgrid-plus-meta.png"],
+  },
   icons: {
     icon: [
       {

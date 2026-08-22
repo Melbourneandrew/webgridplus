@@ -5,6 +5,7 @@ test("home page loads and shows game", async ({ page }) => {
   await expect(page).toHaveTitle("Webgrid+");
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", "/wgp-favicon.png?v=2");
   await expect(page.getByRole("heading", { name: "Play Webgrid+" })).toBeVisible();
+  await expect(page.getByText("00:60", { exact: true })).toBeVisible();
   await expect(page.getByText("Welcome to Webgrid+")).not.toBeVisible();
   await expect(page.getByRole("link", { name: "Regular" })).toHaveCount(1);
   await expect(page.getByRole("link", { name: "Blitz" })).toHaveCount(1);
@@ -86,7 +87,7 @@ test("account pages have descriptive titles", async ({ page }) => {
 test("signing up logs the user in immediately and persists the session", async ({ page }) => {
   const uniqueId = Date.now();
   const email = `signup-${uniqueId}@example.com`;
-  const displayName = `Signup Test ${uniqueId}`;
+  const displayName = `Test ${uniqueId}`;
 
   await page.goto("/signup");
   await page.getByLabel("Display name").fill(displayName);
